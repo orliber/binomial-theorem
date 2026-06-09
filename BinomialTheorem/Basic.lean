@@ -7,7 +7,8 @@ import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Choose.Central
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.NumberTheory.ZetaValues
 
 /-! # Binomial Theorem — From Pascal's Triangle to the Riemann Zeta Function
 
@@ -183,6 +184,6 @@ theorem polylog_at_one_eq_zeta (s : ℝ) :
 theorem euler_basel :
     zetaFunction 2 = π ^ 2 / 6 := by
   simp only [zetaFunction]
-  have h : HasSum (fun n : ℕ => (1 : ℝ) / ((n : ℝ) + 1) ^ 2) (π ^ 2 / 6) := by
-    sorry -- Mathlib: see Real.hasSum_one_div_nat_sq or Nat.zeta_eq_tsum_one_div_pow
-  exact h.tsum_eq
+  rw [show (2 : ℝ) = (2 : ℕ) by norm_num]
+  simp_rw [Real.rpow_natCast]
+  simpa using ((hasSum_nat_add_iff' 1).mpr hasSum_zeta_two).tsum_eq

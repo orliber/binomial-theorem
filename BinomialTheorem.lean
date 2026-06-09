@@ -1,1 +1,2 @@
 import BinomialTheorem.Basic
+import BinomialTheorem.GaussProofs
