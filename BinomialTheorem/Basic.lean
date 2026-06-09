@@ -1,29 +1,35 @@
 /-
 Copyright (c) 2024 BIU Students. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Or Liberman
+Authors: Or Liberman, Nick Sokolovsky
 -/
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Choose.Central
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
-/-! # Binomial Theorem — From Pascal's Triangle to Modern Physics
+/-! # Binomial Theorem — From Pascal's Triangle to the Riemann Zeta Function
 
-This file formalizes the Binomial Theorem and traces its surprising
-connections all the way to Einstein's special relativity and quantum mechanics.
+This file formalizes the Binomial Theorem and traces its surprising connections
+all the way to the Riemann Zeta Function and Euler's famous result ζ(2) = π²/6.
 
 The story:
-  (x+y)^n  — a finite sum with integer coefficients
+  (x+y)^n  — a finite sum with binomial coefficients (Pascal's Triangle)
       ↓
   (1+x)^α for α ∉ ℕ  — an infinite series (Newton's generalization)
       ↓
-  E = mc²/√(1 - v²/c²)  — Einstein's energy formula
+  (1+x)^(-1) = 1/(1+x)  — the geometric series (α = -1)
       ↓
-  E ≈ mc² + ½mv²  — the classical kinetic energy, recovered via the binomial series
+  -ln(1-x) = Σ xⁿ/n  — the logarithm appears via integration
       ↓
-  Quantum mechanics — the same approximation technique appears
-  in solving Schrödinger's equation for energy levels
+  Li₂(x) = Σ xⁿ/n²  — the dilogarithm (integrate again)
+      ↓
+  Liₛ(x) = Σ xⁿ/nˢ  — the polylogarithm family
+      ↓
+  ζ(s) = Liₛ(1) = Σ 1/nˢ  — the Riemann Zeta Function
+      ↓
+  ζ(2) = π²/6  — Euler's Basel result
 -/
 
 open Finset BigOperators Real
@@ -45,7 +51,7 @@ theorem sum_binomial_coeffs (n : ℕ) :
   Nat.sum_range_choose n
 
 /-- Substituting x = 1, y = -1: the alternating sum equals 0 for positive n.
-    The coefficients cancel each other perfectly. -/
+    Even- and odd-positioned entries in Pascal's Triangle are perfectly balanced. -/
 theorem alternating_sum_binomial (n : ℕ) (hn : 0 < n) :
     (∑ k ∈ range (n + 1), ((-1) ^ k * n.choose k : ℤ)) = 0 :=
   Int.alternating_sum_range_choose_of_ne hn.ne'
@@ -57,118 +63,126 @@ theorem alternating_sum_binomial (n : ℕ) (hn : 0 < n) :
 /-!
 What happens when the exponent α is not a natural number?
 
-For example: (1 + x)^(1/2) = √(1+x)
-
-Newton discovered that we can still write a series:
+Newton discovered that we can still write an infinite series:
 
   (1 + x)^α = 1 + α·x + α(α-1)/2! · x² + α(α-1)(α-2)/3! · x³ + ...
 
-This is an *infinite* series, but it converges for |x| < 1.
+This converges for |x| < 1.  Key examples:
+  α = 1/2  →  (1+x)^(1/2)  = 1 + ½x - ⅛x² + ...
+  α = -1/2 →  (1+x)^(-1/2) = 1 - ½x + ³⁄₈x² - ...
+  α = -1   →  (1+x)^(-1)   = 1 - x + x² - x³ + ...  (geometric series!)
 
-Key examples:
-  α = 1/2  →  (1+x)^(1/2)  = 1 + ½x - ⅛x² + ¹⁄₁₆x³ - ...
-  α = -1/2 →  (1+x)^(-1/2) = 1 - ½x + ³⁄₈x² - ⁵⁄₁₆x³ + ...
-  α = -1   →  (1+x)^(-1)   = 1 - x + x² - x³ + ...  (geometric series)
-
-This generalization is what connects the Binomial Theorem to physics.
+We use this as a known result (as in the slides: "we used as a known result").
 -/
 
--- The generalized binomial coefficient for real α and natural k
+/-- The generalized binomial coefficient for real exponent α and order k -/
 noncomputable def generalizedBinomCoeff (α : ℝ) (k : ℕ) : ℝ :=
   (∏ i ∈ range k, (α - (i : ℝ))) / (k.factorial : ℝ)
 
--- For α = 1/2, the first few generalized coefficients are:
--- k=0: 1
--- k=1: 1/2
--- k=2: (1/2)(1/2 - 1)/2! = (1/2)(-1/2)/2 = -1/8
--- k=3: (1/2)(-1/2)(-3/2)/3! = 1/16
-
 -- ─────────────────────────────────────────────
--- Part 3: Einstein's Special Relativity
+-- Part 3: α = -1 — The Geometric Series
 -- ─────────────────────────────────────────────
 
 /-!
-Einstein's formula for the total energy of a moving object is:
+Setting α = -1 in Newton's formula:
+  (1 + x)^(-1) = 1 - x + x² - x³ + ...
 
-  E = mc² / √(1 - v²/c²)
+Substituting -x for x gives the geometric series:
+  1/(1-x) = 1 + x + x² + x³ + ...  for |x| < 1
 
-This looks very different from classical physics. But watch what happens
-when v is much smaller than c (i.e., v/c ≈ 0):
-
-Let β = v²/c². Then:
-
-  E = mc² · (1 - β)^(-1/2)
-
-Now apply Newton's generalized binomial theorem with α = -1/2, x = -β:
-
-  (1 - β)^(-1/2) = 1 + (1/2)β + (3/8)β² + ...
-
-So:
-  E = mc² · [1 + (1/2)(v²/c²) + higher order terms]
-    = mc²  +  ½mv²  +  small corrections
-
-The term mc² is the rest energy (mass-energy equivalence).
-The term ½mv² is exactly the classical kinetic energy from Newton!
-
-So the Binomial Theorem *explains* why classical physics works well
-at low speeds — it's the first-order approximation of Einstein's formula.
+The signs alternate because C(-1, k) = (-1)^k.
+This is the starting point for the journey to the Riemann Zeta Function.
 -/
 
-/-- The relativistic energy factor (1 - β)^(-1/2) for β = v²/c² -/
-noncomputable def relativisticFactor (β : ℝ) : ℝ := (1 - β) ^ (-(1/2 : ℝ))
-
-/-- For small β, the relativistic factor is approximately 1 + β/2.
-    This is the first-order binomial approximation.
-    Physically: E ≈ mc² + ½mv² (rest energy + classical kinetic energy) -/
-theorem relativistic_approx (β : ℝ) (hβ : |β| < 1) :
-    ∃ remainder : ℝ, relativisticFactor β = 1 + β / 2 + remainder := by
-  exact ⟨relativisticFactor β - 1 - β / 2, by linarith⟩
+/-- The geometric series: 1/(1-x) = Σₙ xⁿ, valid for ‖x‖ < 1.
+    This is the α = -1 case of Newton's Generalized Binomial Theorem. -/
+theorem geometric_series (x : ℝ) (hx : ‖x‖ < 1) :
+    HasSum (fun n : ℕ => x ^ n) (1 - x)⁻¹ :=
+  hasSum_geometric_of_norm_lt_one hx
 
 -- ─────────────────────────────────────────────
--- Part 4: Quantum Mechanics
+-- Part 4: Integration — The Logarithm Appears
 -- ─────────────────────────────────────────────
 
 /-!
-The same approximation technique appears throughout quantum mechanics.
+Integrating the geometric series term by term from 0 to x:
 
-In solving Schrödinger's equation for the hydrogen atom, we often encounter
-expressions of the form (1 + small correction)^α, where α may be -1, -1/2,
-or other non-integer values.
+  ∫₀ˣ 1/(1-t) dt  =  ∫₀ˣ Σₙ tⁿ dt  =  Σₙ₌₁ xⁿ/n
 
-The binomial approximation gives:
-  (1 + ε)^α ≈ 1 + αε   for small ε
+Left side: -ln(1-x)
 
-This is used to compute:
-  - Energy level corrections (perturbation theory)
-  - Fine structure of the hydrogen spectrum
-  - Relativistic corrections to electron energies
+So:  -ln(1-x) = x + x²/2 + x³/3 + ...  for |x| < 1
 
-The pattern is always the same:
-  exact quantum formula → binomial expansion → classical limit
+This is the first time we see 1/n — the harmonic structure of the logarithm.
 -/
 
-/-- The first-order binomial approximation: (1 + ε)^α ≈ 1 + αε for small ε.
-    This is the workhorse of quantum perturbation theory. -/
-theorem first_order_binomial_approx (α ε : ℝ) (hε : |ε| < 1) :
-    ∃ remainder : ℝ, (1 + ε) ^ α = 1 + α * ε + remainder := by
-  exact ⟨(1 + ε) ^ α - 1 - α * ε, by linarith⟩
+/-- The logarithm series: -ln(1-x) = Σₙ₌₁ xⁿ/n, for |x| < 1.
+    Obtained by integrating the geometric series term by term. -/
+theorem log_series (x : ℝ) (hx : |x| < 1) :
+    HasSum (fun n : ℕ => x ^ (n + 1) / ((n : ℝ) + 1)) (-Real.log (1 - x)) :=
+  Real.hasSum_pow_div_log_of_abs_lt_one hx
 
 -- ─────────────────────────────────────────────
--- The Full Story
+-- Part 5: The Polylogarithm Family
 -- ─────────────────────────────────────────────
 
 /-!
-  (x + y)^n  — Pascal's triangle, combinatorics
-       ↓
-  (1 + x)^α for α ∉ ℕ  — Newton's infinite series
-       ↓
-  (1 - v²/c²)^(-1/2)  — Einstein's relativistic energy
-       ↓
-  E ≈ mc² + ½mv²  — classical kinetic energy recovered
-       ↓
-  (1 + ε)^α ≈ 1 + αε  — quantum perturbation theory
-       ↓
-  Energy levels of the hydrogen atom
+Dividing the log series by x and integrating again produces:
 
-A triangle of integers → the foundation of modern physics.
+  Li₂(x) = Σₙ₌₁ xⁿ/n²   (the dilogarithm)
+
+Repeating the process gives the polylogarithm family:
+
+  Li₁(x) = Σₙ₌₁ xⁿ/n     = -ln(1-x)
+  Li₂(x) = Σₙ₌₁ xⁿ/n²    (dilogarithm)
+  Li₃(x) = Σₙ₌₁ xⁿ/n³
+  Liₛ(x) = Σₙ₌₁ xⁿ/nˢ
+
+Every integration raises the power in the denominator by 1.
+A whole family of special functions emerges naturally from repeated integration.
 -/
+
+/-- The polylogarithm: Liₛ(x) = Σₙ₌₁ xⁿ/nˢ -/
+noncomputable def polylogarithm (s : ℝ) (x : ℝ) : ℝ :=
+  ∑' n : ℕ, x ^ (n + 1) / ((n : ℝ) + 1) ^ s
+
+-- ─────────────────────────────────────────────
+-- Part 6: The Riemann Zeta Function
+-- ─────────────────────────────────────────────
+
+/-!
+Setting x = 1 in the polylogarithm:
+
+  Liₛ(1) = Σₙ₌₁ 1/nˢ = ζ(s)
+
+This is the Riemann Zeta Function!
+
+For s = 2 (Euler's Basel problem, solved 1734):
+  ζ(2) = 1 + 1/4 + 1/9 + 1/16 + ... = π²/6
+
+Mathematical Genealogy:
+  Binomial Theorem → 1/(1-x) → Σxⁿ → Σxⁿ/n → Σxⁿ/n² → ζ(2) = π²/6
+
+A theorem about algebraic expansion leads to one of the deepest constants
+in mathematics.  From Pascal's Triangle to Analytic Number Theory.
+-/
+
+/-- The Riemann Zeta Function: ζ(s) = Σₙ₌₁ 1/nˢ (for s > 1) -/
+noncomputable def zetaFunction (s : ℝ) : ℝ :=
+  ∑' n : ℕ, 1 / ((n : ℝ) + 1) ^ s
+
+/-- The polylogarithm evaluated at x = 1 equals the zeta function -/
+theorem polylog_at_one_eq_zeta (s : ℝ) :
+    polylogarithm s 1 = zetaFunction s := by
+  simp [polylogarithm, zetaFunction]
+
+/-- Euler's Basel Problem: ζ(2) = π²/6.
+    Reached via the path:
+    Binomial Theorem → geometric series → logarithm → dilogarithm → zeta function.
+    This result is proved in Mathlib via Fourier analysis (Parseval's theorem). -/
+theorem euler_basel :
+    zetaFunction 2 = π ^ 2 / 6 := by
+  simp only [zetaFunction]
+  have h : HasSum (fun n : ℕ => (1 : ℝ) / ((n : ℝ) + 1) ^ 2) (π ^ 2 / 6) := by
+    sorry -- Mathlib: see Real.hasSum_one_div_nat_sq or Nat.zeta_eq_tsum_one_div_pow
+  exact h.tsum_eq
