@@ -1,13 +1,26 @@
-# binomial-theorem
+# Binomial Theorem in Lean 4
 
-## GitHub configuration
+This project formalizes the classical Binomial Theorem in Lean 4 using Mathlib.
 
-To set up your new GitHub repository, follow these steps:
+## Contents
 
-* Under your repository name, click **Settings**.
-* In the **Actions** section of the sidebar, click "General".
-* Check the box **Allow GitHub Actions to create and approve pull requests**.
-* Click the **Pages** section of the settings sidebar.
-* In the **Source** dropdown menu, select "GitHub Actions".
+`BinomialTheorem/Basic.lean` contains:
 
-After following the steps above, you can remove this section from the README file.
+* an explicit proof by induction of the Binomial Theorem;
+* the identity stating that the sum of row `n` of Pascal's triangle is `2 ^ n`;
+* the alternating-sum identity for positive rows.
+
+`BinomialTheorem/GaussProofs.lean` contains elementary Lean exercises culminating in the
+formula for the sum of the first `n` natural numbers.
+
+`BinomialTheorem.lean` is the root module and imports both files.
+
+## Building
+
+The project uses Lean 4.30.0 and Mathlib.
+
+Build the project with:
+
+```sh
+lake build
+```

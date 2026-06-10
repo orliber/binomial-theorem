@@ -1,6 +1,6 @@
 name = "binomial-theorem"
 version = "0.1.0"
-keywords = ["math"]
+keywords = ["lean", "mathlib", "binomial-theorem", "induction"]
 defaultTargets = ["BinomialTheorem"]
 
 [leanOptions]
