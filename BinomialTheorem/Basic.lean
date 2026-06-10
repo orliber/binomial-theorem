@@ -42,8 +42,47 @@ open Finset BigOperators Real
 /-- The Binomial Theorem: (x + y)^n = Σ C(n,k) · x^k · y^(n-k)
     Holds for any commutative semiring — integers, reals, polynomials, etc. -/
 theorem binomial_theorem {R : Type*} [CommSemiring R] (x y : R) (n : ℕ) :
-    (x + y) ^ n = ∑ k ∈ range (n + 1), x ^ k * y ^ (n - k) * n.choose k :=
-  add_pow x y n
+    (x + y) ^ n = ∑ k ∈ range (n + 1), x ^ k * y ^ (n - k) * n.choose k := by
+  -- The k-th summand in row n of Pascal's triangle.
+  let term : ℕ → ℕ → R :=
+    fun n k ↦ x ^ k * y ^ (n - k) * n.choose k
+  change (x + y) ^ n = ∑ k ∈ range (n + 1), term n k
+  -- The first summand is y^n, and the summand after the last one is zero.
+  have first_term : ∀ n, term n 0 = y ^ n := fun n ↦ by
+    simp [term]
+  have after_last_term : ∀ n, term n n.succ = 0 := fun n ↦ by
+    simp [term]
+  -- Pascal's identity splits every middle term in row n+1 into two terms
+  -- coming from row n.
+  have pascal_step :
+      ∀ n k, k ∈ range n.succ →
+        term n.succ k.succ = x * term n k + y * term n k.succ := by
+    intro n k hk
+    have hkn : k ≤ n := Nat.le_of_lt_succ (mem_range.mp hk)
+    dsimp only [term]
+    rw [Nat.choose_succ_succ, Nat.cast_add, mul_add]
+    congr 1
+    · rw [pow_succ' x, Nat.succ_sub_succ]
+      ac_rfl
+    · by_cases h : k = n
+      · subst k
+        simp
+      · rw [Nat.succ_sub (lt_of_le_of_ne hkn h)]
+        rw [pow_succ' y]
+        ac_rfl
+  induction n with
+  | zero =>
+      -- (x+y)^0 = 1, and row zero contains only C(0,0) = 1.
+      simp [term]
+  | succ n ih =>
+      -- Multiply row n by (x+y), split it into an x-part and a y-part,
+      -- shift the x-part by one place, and combine using Pascal's identity.
+      rw [sum_range_succ', first_term,
+        sum_congr rfl (pascal_step n), sum_add_distrib, add_assoc,
+        pow_succ' (x + y), ih, add_mul, mul_sum, mul_sum]
+      congr 1
+      rw [sum_range_succ', sum_range_succ, first_term, after_last_term,
+        mul_zero, add_zero, pow_succ']
 
 /-- Substituting x = y = 1: the sum of all binomial coefficients in row n equals 2^n.
     This is the count of all subsets of an n-element set. -/
